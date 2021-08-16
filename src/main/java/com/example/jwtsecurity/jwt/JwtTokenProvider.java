@@ -64,13 +64,23 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    private Claims getClaimsFormToken(String token) {
+    // Request의 Header에서 token 값을 가져옵니다. "X-AUTH-TOKEN" : "TOKEN값'
+    public String resolveAccessToken(HttpServletRequest request) {
+        return request.getHeader("ACCESS_TOKEN");
+    }
+
+    public String resolveRefreshToken(HttpServletRequest request) {
+        return request.getHeader("REFRESH_TOKEN");
+    }
+
+    public Claims getClaimsFormToken(String token) {
         return Jwts.parser()
                 .setSigningKey(DatatypeConverter.parseBase64Binary(SECRET_KEY))
                 .parseClaimsJws(token)
                 .getBody();
     }
-    private Claims getClaimsToken(String token) {
+
+    public Claims getClaimsToken(String token) {
         return Jwts.parser()
                 .setSigningKey(DatatypeConverter.parseBase64Binary(REFRESH_KEY))
                 .parseClaimsJws(token)

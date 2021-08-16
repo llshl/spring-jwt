@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +47,14 @@ public class UserController {
         Map<String, String> result = new HashMap<>();
         result.put("result","user ok");
         return result;
+    }
+
+    //Access Token을 재발급 위한 api
+    @PostMapping("/issue")
+    public ResponseEntity issueAccessToken(HttpServletRequest request) throws Exception {
+        return ResponseEntity
+                .ok()
+                .body(userService.issueAccessToken(request));
     }
 
 //    @PostMapping("/admin/test")
