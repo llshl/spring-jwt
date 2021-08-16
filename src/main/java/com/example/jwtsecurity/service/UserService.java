@@ -62,7 +62,7 @@ public class UserService {
 
         //refresh 토큰은 유효 할 경우
         if (jwtTokenProvider.isValidRefreshToken(refreshToken)) {
-            accessToken = jwtTokenProvider.createAccessToken(user.getUserId());
+            accessToken = jwtTokenProvider.createAccessToken(user.getUserId()); //Access Token 새로 만들어서 줌
             return TokenResponse.builder()
                     .ACCESS_TOKEN(accessToken)
                     .REFRESH_TOKEN(refreshToken)

@@ -64,15 +64,6 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    // Request의 Header에서 token 값을 가져옵니다. "X-AUTH-TOKEN" : "TOKEN값'
-    public String resolveAccessToken(HttpServletRequest request) {
-        return request.getHeader("ACCESS-TOKEN");
-    }
-
-    public String resolveRefreshToken(HttpServletRequest request) {
-        return request.getHeader("REFRESH-TOKEN");
-    }
-
     private Claims getClaimsFormToken(String token) {
         return Jwts.parser()
                 .setSigningKey(DatatypeConverter.parseBase64Binary(SECRET_KEY))
