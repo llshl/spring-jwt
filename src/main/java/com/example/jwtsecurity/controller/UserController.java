@@ -1,10 +1,14 @@
 package com.example.jwtsecurity.controller;
 
 
+import com.example.jwtsecurity.dto.TokenResponse;
+import com.example.jwtsecurity.dto.UserRequest;
 import com.example.jwtsecurity.entity.User;
 import com.example.jwtsecurity.jwt.JwtTokenProvider;
 import com.example.jwtsecurity.repository.UserRepository;
+import com.example.jwtsecurity.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,29 +22,23 @@ import java.util.Map;
 @RequiredArgsConstructor
 @RestController
 public class UserController {
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     // 회원가입
     @PostMapping("/join")
-    public Long join(@RequestBody Map<String, String> user) {
-        return userRepository.save(User.builder()
-                .email(user.get("email"))
-                .password(passwordEncoder.encode(user.get("password")))
-                .roles(Collections.singletonList("ROLE_USER")) // 최초 가입시 USER 로 설정
-                .build()).getId();
+    public ResponseEntity join(@RequestBody UserRequest userRequest) {
+        if(userService.findByUserId(userRequest.getUserId()).isPresent())
+            return ResponseEntity.badRequest().build();
+        else
+            return ResponseEntity.ok(userService.register(userRequest));
     }
 
     // 로그인
     @PostMapping("/login")
-    public String login(@RequestBody Map<String, String> user) {
-        User member = userRepository.findByEmail(user.get("email"))
-                .orElseThrow(() -> new IllegalArgumentException("가입되지 않은 E-MAIL 입니다."));
-        if (!passwordEncoder.matches(user.get("password"), member.getPassword())) {
-            throw new IllegalArgumentException("잘못된 비밀번호입니다.");
-        }
-        return jwtTokenProvider.createToken(member.getUsername(), member.getRoles());
+    public ResponseEntity login(@RequestBody UserRequest userRequest) throws Exception {
+        return ResponseEntity
+                .ok()
+                .body(userService.doLogin(userRequest));
     }
 
     @PostMapping("/user/test")
@@ -50,10 +48,10 @@ public class UserController {
         return result;
     }
 
-    @PostMapping("/admin/test")
-    public Map adminResponseTest() {
-        Map<String, String> result = new HashMap<>();
-        result.put("result","admin ok");
-        return result;
-    }
+//    @PostMapping("/admin/test")
+//    public Map adminResponseTest() {
+//        Map<String, String> result = new HashMap<>();
+//        result.put("result","admin ok");
+//        return result;
+//    }
 }
