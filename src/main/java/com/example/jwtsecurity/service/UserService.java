@@ -1,5 +1,6 @@
 package com.example.jwtsecurity.service;
 
+import com.example.jwtsecurity.dto.TokenIndexResponse;
 import com.example.jwtsecurity.dto.TokenResponse;
 import com.example.jwtsecurity.dto.UserRequest;
 import com.example.jwtsecurity.entity.Auth;
@@ -84,8 +85,7 @@ public class UserService {
                 .build();
     }
 
-    @Transactional
-    public TokenResponse issueAccessToken(HttpServletRequest request) throws Exception {
+    public TokenResponse issueAccessToken(HttpServletRequest request){
         String accessToken = jwtTokenProvider.resolveAccessToken(request);
         String refreshToken = jwtTokenProvider.resolveRefreshToken(request);
         System.out.println("accessToken = " + accessToken);
@@ -101,7 +101,7 @@ public class UserService {
                 String tokenFromDB = authRepository.findByUserId(user.get().getId()).get().getRefreshToken();
                 System.out.println("tokenFromDB = " + tokenFromDB);
                 if(refreshToken.equals(tokenFromDB)) {   //DB의 refresh토큰과 지금들어온 토큰이 같은지 확인
-                    System.out.println("Refresh 토큰 재발급 완료");
+                    System.out.println("Access 토큰 재발급 완료");
                     accessToken = jwtTokenProvider.createAccessToken(userId);
                 }
                 else{
@@ -117,6 +117,52 @@ public class UserService {
         return TokenResponse.builder()
                 .ACCESS_TOKEN(accessToken)
                 .REFRESH_TOKEN(refreshToken)
+                .build();
+    }
+
+    //회원 가입하면 refresh 토큰의 데이터베이스 인덱스를 반환
+    public TokenIndexResponse registerIndex(UserRequest userRequest){
+        User user = User.builder()
+                .userId(userRequest.getUserId())
+                .userPw(passwordEncoder.encode(userRequest.getUserPw()))
+                .build();
+        userRepository.save(user);
+
+        String accessToken = jwtTokenProvider.createAccessToken(user.getUserId());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getUserId());
+        Auth auth = Auth.builder()
+                .user(user)
+                .accessToken(accessToken)       //인덱스와 그것에 대당하는 access토큰이 동시에 만족돼야 재발급하도록
+                .refreshToken(refreshToken)
+                .build();
+        Auth saveAuth = authRepository.save(auth);
+        return TokenIndexResponse.builder()
+                .ACCESS_TOKEN(accessToken)
+                .REFRESH_TOKEN_INDEX(saveAuth.getId())
+                .build();
+    }
+
+    //refresh 토큰의 인덱스를 통한 검증
+    public TokenIndexResponse issueAccessIndexToken(HttpServletRequest request){
+        String accessToken = jwtTokenProvider.resolveAccessToken(request);
+        Long refreshTokenIndex = jwtTokenProvider.resolveRefreshIndexToken(request);
+        if(jwtTokenProvider.isOnlyExpiredToken(accessToken)) {  //만료만 된 토큰이라면
+            //잘못된 토큰이 아니라 만료만 된 토큰이므로 올바른 사용자는 맞다 하지만 access토큰이 만료된것 뿐
+            Optional<Auth> findAuth = authRepository.findById(refreshTokenIndex);
+            String refreshTokenFromDB = findAuth.get().getRefreshToken();
+            Claims claimsToken = jwtTokenProvider.getClaimsToken(refreshTokenFromDB);
+            String userId = (String)claimsToken.get("userId");
+            if (jwtTokenProvider.isValidRefreshToken(refreshTokenFromDB)) {
+                System.out.println("Access 토큰 재발급 완료 by 인덱스");
+                accessToken = jwtTokenProvider.createAccessToken(userId);
+            } else {
+                //예외발생
+                System.out.println("Refresh Token Tampered");
+            }
+        }
+        return TokenIndexResponse.builder()
+                .ACCESS_TOKEN(accessToken)
+                .REFRESH_TOKEN_INDEX(refreshTokenIndex)
                 .build();
     }
 

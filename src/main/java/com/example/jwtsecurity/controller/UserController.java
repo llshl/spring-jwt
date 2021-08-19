@@ -45,7 +45,7 @@ public class UserController {
     @PostMapping("/user/test")
     public Map userResponseTest() {
         Map<String, String> result = new HashMap<>();
-        result.put("result","user ok");
+        result.put("result","success");
         return result;
     }
 
@@ -57,10 +57,20 @@ public class UserController {
                 .body(userService.issueAccessToken(request));
     }
 
-//    @PostMapping("/admin/test")
-//    public Map adminResponseTest() {
-//        Map<String, String> result = new HashMap<>();
-//        result.put("result","admin ok");
-//        return result;
-//    }
+    // refresh 토큰 대신 인덱스를 반환하는 회원가입
+    @PostMapping("/joinindex")
+    public ResponseEntity join2(@RequestBody UserRequest userRequest) {
+        if(userService.findByUserId(userRequest.getUserId()).isPresent())
+            return ResponseEntity.badRequest().build();
+        else
+            return ResponseEntity.ok(userService.registerIndex(userRequest));
+    }
+
+    //Access Token을 재발급 위한 api (refresh 토큰 인덱스를 통한 재발급)
+    @PostMapping("/issueindex")
+    public ResponseEntity issueAccessToken2(HttpServletRequest request) throws Exception {
+        return ResponseEntity
+                .ok()
+                .body(userService.issueAccessIndexToken(request));
+    }
 }

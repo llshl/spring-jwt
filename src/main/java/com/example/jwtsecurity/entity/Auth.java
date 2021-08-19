@@ -17,12 +17,16 @@ public class Auth {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     private Long id;
-
+    private String accessToken;
     private String refreshToken;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    public void accessUpdate(String accessToken) {
+        this.accessToken = accessToken;
+    }
 
     public void refreshUpdate(String refreshToken) {
         this.refreshToken = refreshToken;
